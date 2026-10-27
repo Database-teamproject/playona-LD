@@ -102,9 +102,15 @@ Resources:
           - !Ref FrontendUrl
         AllowCredentials: true
         AllowHeaders:
-          - '*'
+          - Authorization
+          - Content-Type
+          - Accept
         AllowMethods:
-          - '*'
+          - GET
+          - POST
+          - PUT
+          - DELETE
+          - OPTIONS
 
   ApiFunction:
     Type: AWS::Serverless::Function
