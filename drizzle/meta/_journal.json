@@ -15,6 +15,13 @@
       "when": 1793114700418,
       "tag": "0001_thankful_arclight",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793118753138,
+      "tag": "0002_add_missing_music_platforms",
+      "breakpoints": true
     }
   ]
 }
