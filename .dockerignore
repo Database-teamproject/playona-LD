@@ -1,0 +1,12 @@
+node_modules
+dist
+.aws-sam
+.git
+.github
+coverage
+*.log
+.env
+.env.*
+env.json
+samconfig.local.toml
+README.md

@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig.json",
+  "include": ["src/**/*"],
+  "exclude": [
+    "node_modules",
+    "test",
+    "dist",
+    "drizzle.config.ts",
+    "**/*spec.ts",
+    "src/database/seed.ts"
+  ]
+}

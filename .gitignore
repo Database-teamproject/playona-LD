@@ -1,0 +1,27 @@
+# compiled output
+/dist
+/node_modules
+/build
+
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# environment
+.env
+.env.*
+!.env.example
+env.json
+
+# AWS SAM
+.aws-sam/
+samconfig.local.toml
+
+# OS / editor
+.DS_Store
+.idea
+.vscode
+
+# tests
+/coverage

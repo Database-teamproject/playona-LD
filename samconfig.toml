@@ -1,0 +1,18 @@
+version = 0.1
+
+[default.global.parameters]
+stack_name = "playona-be"
+
+[default.build.parameters]
+cached = true
+parallel = true
+
+[default.deploy.parameters]
+capabilities = "CAPABILITY_IAM"
+confirm_changeset = false
+resolve_image_repos = true
+region = "ap-northeast-2"
+image_repositories = []
+# 시크릿은 커밋하지 않는다. 배포 시 아래 중 하나로 주입:
+#   sam deploy --parameter-overrides "DatabaseUrl=... JwtSecret=..."
+# 또는 GitHub Actions secrets (.github/workflows/deploy.yml 참고)

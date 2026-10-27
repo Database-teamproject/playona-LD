@@ -1,0 +1,169 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Playona Backend - NestJS 서버리스 API (AWS Lambda + HTTP API Gateway)
+
+Parameters:
+  Stage:
+    Type: String
+    Default: prod
+    AllowedValues: [dev, prod]
+  DatabaseUrl:
+    Type: String
+    NoEcho: true
+    Description: Supabase 트랜잭션 풀러 커넥션 문자열 (port 6543)
+  JwtSecret:
+    Type: String
+    NoEcho: true
+    MinLength: 32
+  ProfileImageBucket:
+    Type: String
+    Default: ''
+    Description: Existing S3 bucket for profile images (optional)
+  ProfileImagePublicBaseUrl:
+    Type: String
+    Default: ''
+    Description: Public CloudFront or S3 base URL for that bucket
+  KakaoClientId:
+    Type: String
+    Default: ''
+  KakaoClientSecret:
+    Type: String
+    NoEcho: true
+    Default: ''
+  KakaoRedirectUri:
+    Type: String
+    Default: ''
+  GoogleClientId:
+    Type: String
+    Default: ''
+  GoogleClientSecret:
+    Type: String
+    NoEcho: true
+    Default: ''
+  GoogleRedirectUri:
+    Type: String
+    Default: ''
+  ShareBaseUrl:
+    Type: String
+    Default: https://playona-five.vercel.app
+  FrontendUrl:
+    Type: String
+    Description: OAuth 성공 후 토큰을 실어 리디렉션할 프론트엔드 주소
+    Default: https://playona-five.vercel.app
+  SpotifyClientId:
+    Type: String
+    Default: ''
+  SpotifyClientSecret:
+    Type: String
+    NoEcho: true
+    Default: ''
+  YoutubeApiKey:
+    Type: String
+    NoEcho: true
+    Default: ''
+  AiMatchingMode:
+    Type: String
+    Default: 'off'
+    AllowedValues: ['off', shadow, assist]
+  OpenAiApiKey:
+    Type: String
+    NoEcho: true
+    Default: ''
+  AiMatchingModel:
+    Type: String
+    Default: gpt-4o-mini
+  AiMatchingMaxRequests:
+    Type: Number
+    Default: 20
+    MinValue: 0
+
+Conditions:
+  HasImageBucket: !Not [!Equals [!Ref ProfileImageBucket, '']]
+
+Globals:
+  Function:
+    # PackageType: Image 에서는 Runtime 을 지정하지 않음 (Dockerfile 베이스 이미지가 런타임)
+    Timeout: 30
+    MemorySize: 512
+    Architectures:
+      - arm64
+
+Resources:
+  PlayonaHttpApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      # $default 스테이지 — URL 에 경로 prefix 가 붙지 않아 NestJS 라우팅과 일치
+      StageName: $default
+      DefaultRouteSettings:
+        ThrottlingBurstLimit: 20
+        ThrottlingRateLimit: 10
+      CorsConfiguration:
+        AllowOrigins:
+          - !Ref FrontendUrl
+        AllowCredentials: true
+        AllowHeaders:
+          - '*'
+        AllowMethods:
+          - '*'
+
+  ApiFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      Dockerfile: Dockerfile
+      DockerContext: .
+      DockerTag: !Ref Stage
+    Properties:
+      PackageType: Image
+      Policies:
+        - !If
+          - HasImageBucket
+          - Statement:
+              - Effect: Allow
+                Action: s3:PutObject
+                Resource: !Sub 'arn:${AWS::Partition}:s3:::${ProfileImageBucket}/profile-images/*'
+          - !Ref AWS::NoValue
+      Environment:
+        Variables:
+          NODE_ENV: production
+          DATABASE_POOL_URL: !Ref DatabaseUrl
+          JWT_SECRET: !Ref JwtSecret
+          JWT_ACCESS_EXPIRATION: '3600'
+          JWT_REFRESH_EXPIRATION: '1209600'
+          KAKAO_CLIENT_ID: !Ref KakaoClientId
+          KAKAO_CLIENT_SECRET: !Ref KakaoClientSecret
+          KAKAO_REDIRECT_URI: !Ref KakaoRedirectUri
+          GOOGLE_CLIENT_ID: !Ref GoogleClientId
+          GOOGLE_CLIENT_SECRET: !Ref GoogleClientSecret
+          GOOGLE_REDIRECT_URI: !Ref GoogleRedirectUri
+          SHARE_BASE_URL: !Ref ShareBaseUrl
+          FRONTEND_URL: !Ref FrontendUrl
+          SPOTIFY_CLIENT_ID: !Ref SpotifyClientId
+          SPOTIFY_CLIENT_SECRET: !Ref SpotifyClientSecret
+          YOUTUBE_API_KEY: !Ref YoutubeApiKey
+          S3_BUCKET: !Ref ProfileImageBucket
+          S3_PUBLIC_BASE_URL: !Ref ProfileImagePublicBaseUrl
+          AI_MATCHING_MODE: !Ref AiMatchingMode
+          OPENAI_API_KEY: !Ref OpenAiApiKey
+          AI_MATCHING_MODEL: !Ref AiMatchingModel
+          AI_MATCHING_MAX_REQUESTS: !Ref AiMatchingMaxRequests
+      Events:
+        Root:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref PlayonaHttpApi
+            Path: /
+            Method: ANY
+        Proxy:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref PlayonaHttpApi
+            Path: /{proxy+}
+            Method: ANY
+
+Outputs:
+  ApiUrl:
+    Description: API 엔드포인트
+    Value: !Sub 'https://${PlayonaHttpApi}.execute-api.${AWS::Region}.amazonaws.com'
+  SwaggerUrl:
+    Description: Swagger UI
+    Value: !Sub 'https://${PlayonaHttpApi}.execute-api.${AWS::Region}.amazonaws.com/docs'
