@@ -160,6 +160,44 @@ Resources:
             Path: /{proxy+}
             Method: ANY
 
+  DatabaseKeepaliveFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      Dockerfile: Dockerfile
+      DockerContext: .
+      DockerTag: keepalive
+    Properties:
+      PackageType: Image
+      ImageConfig:
+        Command: [dist/database/keepalive.handler]
+      MemorySize: 128
+      Timeout: 15
+      Environment:
+        Variables:
+          DATABASE_POOL_URL: !Ref DatabaseUrl
+      EventInvokeConfig:
+        MaximumRetryAttempts: 0
+        MaximumEventAgeInSeconds: 60
+      Events:
+        DailyDatabaseRead:
+          Type: ScheduleV2
+          Properties:
+            OmitName: true
+            Description: One daily read-only database query at 03:00 Asia/Seoul
+            ScheduleExpression: cron(0 3 * * ? *)
+            ScheduleExpressionTimezone: Asia/Seoul
+            FlexibleTimeWindow:
+              Mode: 'OFF'
+            RetryPolicy:
+              MaximumRetryAttempts: 0
+              MaximumEventAgeInSeconds: 60
+
+  DatabaseKeepaliveLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${DatabaseKeepaliveFunction}'
+      RetentionInDays: 7
+
 Outputs:
   ApiUrl:
     Description: API 엔드포인트
