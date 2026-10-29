@@ -31,19 +31,7 @@
 | Deployment     | Docker, AWS SAM, Lambda, API Gateway |
 | Operations     | Amazon ECR, CloudWatch Logs          |
 
-```mermaid
-flowchart LR
-    Client[Client] <--> Frontend[Vercel / React / Vite]
-    Frontend <--> Gateway
-    subgraph AWS["AWS / ap-northeast-2"]
-        Gateway[API Gateway] <--> Backend[Lambda / NestJS]
-        ECR[Amazon ECR] -.-> Backend
-        Backend -.-> Logs[CloudWatch Logs]
-    end
-    Backend <--> DB[Supabase PostgreSQL]
-    Backend <--> Kakao[Kakao OAuth]
-    Backend <--> Music[Music Metadata Sources]
-```
+<img width="1672" height="941" alt="playona-architecture-2026-10-29-v4-en" src="https://github.com/user-attachments/assets/475f1fe1-bd80-405f-be4c-5486ef0532a1" />
 
 Spotify Web API, YouTube Data API, iTunes Search API, FLO 웹 API를 사용합니다.
 
